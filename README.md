@@ -22,12 +22,12 @@
 
 ### 📊 Executive Overview & KPIs
 <p align="center">
-  <img src="images/dashboard_overview.png" width="95%" alt="Dashboard Overview">
+  <img src="images/1.png" width="95%" alt="Dashboard Overview">
 </p>
 
 ### 🎯 Student Segmentation & Risk Analysis
 <p align="center">
-  <img src="images/risk_analysis.png" width="95%" alt="Risk Analysis">
+  <img src="images/2.png" width="95%" alt="Risk Analysis">
 </p>
 
 ---
