@@ -278,12 +278,13 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Tabs ───────────────────────────────────────────────────────────────────────
 tabs = st.tabs([
-    "📊  Q1–Q3: Attendance & Grades",
-    "🔗  Q4–Q5: Attendance & Engagement",
-    "📚  Q6–Q7: Concept Mastery",
-    "⏰  Q8–Q10: Submissions & Time",
-    "🎯  Q11–Q13: Segmentation & Groups",
-    "🚨  Q14–Q15: At-Risk & Trends",
+    "📊 Attendance & Grades",
+    "🔗 Attendance & Engagement",
+    "📚 Concept Mastery",
+    "⏰ Submissions & Time",
+    "🎯 Segmentation & Groups",
+    "🚨 At-Risk & Trends",
+    "📈 Strategic Recommendations"
 ])
 
 
@@ -978,5 +979,26 @@ with tabs[5]:
     else:
         st.info("No group trend data available.")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.caption("All analytics precomputed and served from MongoDB Atlas · Kayfa AI & Data Analytics Internship · Week 2")
+
+
+    # ── TAB 7: Strategic Recommendations ────────────────────────────────────────
+with tabs[6]:
+    st.markdown(sec("Executive Summary & Strategic Action Plan"), unsafe_allow_html=True)
+    st.markdown("""
+    <div style="margin-bottom:2rem; font-size:1.05rem; color:#1e293b; line-height:1.6;">
+    Based on the multi-source data audit and predictive analytics, we have identified key operational risks and growth opportunities for the Kayfa platform.
+    </div>
+    """, unsafe_allow_html=True)
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown("""<div class="strat-card"><div class="strat-title">🎯 Academic Intervention</div>
+            <div class="strat-point"><b>High-Priority Outreach:</b> Immediate contact for the <b>Top 10 At-Risk</b> students.</div>
+            <div class="strat-point"><b>Attendance Threshold:</b> Automated checks for students below <b>65%</b> attendance.</div></div>""", unsafe_allow_html=True)
+    with col_b:
+        st.markdown("""<div class="strat-card"><div class="strat-title">⚡ Engagement & Retention</div>
+            <div class="strat-point"><b>Login Gamification:</b> Daily rewards to encourage platform consistency.</div>
+            <div class="strat-point"><b>Procrastination Alert:</b> "Early-Bird" bonus points to shift submission behavior.</div></div>""", unsafe_allow_html=True)
+    st.info("💡 **Managerial Insight:** Data shows that 'Login Frequency' is a stronger predictor of success than 'Video Watch Time'.")
+
+st.markdown("<br>", unsafe_allow_html=True)
+st.caption("All analytics precomputed and served from MongoDB Atlas · Kayfa AI & Data Analytics Internship · Week 2")
