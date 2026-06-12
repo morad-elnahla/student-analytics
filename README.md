@@ -14,7 +14,7 @@
 |:-----------------:|:-----------------:|:-------------:|:---------------------:|
 | **~500** | **~75%** | **~68%** | **15** |
 
-**[🚀 Try the Live Dashboard →](https://your-app-link.streamlit.app/)**
+**[🚀 Try the Live Dashboard →](https://student--analytics.streamlit.app/)**
 
 </div>
 
