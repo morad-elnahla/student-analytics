@@ -1,3 +1,5 @@
+&nbsp;
+
 <div align="center">
 
 [![Typing SVG](https://readme-typing-svg.demolab.com?font=Syne&weight=800&size=36&pause=1000&color=6366f1&center=true&vCenter=true&width=600&lines=Kayfa+Student+Analytics+🎓;Data+Wrangling+%26+Storytelling;MongoDB+Atlas+Integrated)](https://git.io/typing-svg)
@@ -134,3 +136,5 @@ kayfa-student-analytics/
 Built with ⚡ for Kayfa AI & Data Analytics Internship · Week 2<br>
 Synthetic dataset — patterns are realistic but not real-world data.
 </div>
+
+&nbsp;
