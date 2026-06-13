@@ -210,7 +210,7 @@ def qlayout(fig, h=400):
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         template="plotly_white",
-        font=dict(family="DM Sans", size=11),
+        font=dict(family="DM Sans", size=13),
         title_font=dict(family="DM Sans", size=13, weight=600),
     )
     fig.update_xaxes(gridcolor="rgba(0,0,0,0.05)", zeroline=False)
@@ -314,7 +314,9 @@ with tabs[0]:
                  text=att_group["att_rate"].round(1).astype(str) + "%")
     fig.add_vline(x=platform_avg, line_dash="dash", line_color="navy",
                   annotation_text=f"Platform avg {platform_avg:.1f}%",
-                  annotation_position="top right")
+                  annotation_position="top right",
+                  annotation_font_color="navy",
+                  annotation_font_size=14)
     fig.update_layout(xaxis_range=[0, 100], legend_title="Status",
                       yaxis={"categoryorder": "total ascending"})
     st.plotly_chart(qlayout(fig, 500), use_container_width=True)
@@ -346,6 +348,7 @@ with tabs[0]:
     for _, row in type_stats_ordered.iterrows():
         fig.add_trace(go.Box(
             name=row["type"],
+            x=[row["type"]],
             q1=[row["q25"]], median=[row["median"]], q3=[row["q75"]],
             lowerfence=[max(0, row["q25"] - 1.5 * (row["q75"] - row["q25"]))],
             upperfence=[min(100, row["q75"] + 1.5 * (row["q75"] - row["q25"]))],
@@ -358,12 +361,9 @@ with tabs[0]:
 
     st.markdown(
         insight_box("💡", "INSIGHTS",
-                    f"Most volatile assessment type: <b>{most_volatile}</b> (highest std deviation). "
-                    "A wider IQR (taller box) means students in the same cohort end up with very different outcomes — "
-                    "pointing to inconsistent preparation, question difficulty variance, or grading subjectivity. "
-                    "Exams typically have the lowest median (highest pressure) while practicals reward hands-on learners."),
-        unsafe_allow_html=True,
-    )
+                    "Exam scores vary the most — some students perform very well while others struggle significantly. This makes exams the most inconsistent assessment type and the key area to focus on for improving performance consistency."),
+        unsafe_allow_html=True
+    )    
 
     # ── Q3 ───────────────────────────────────────────────────────────────────
     st.markdown(sec("Q3 · Course Average Grade — Highest vs Lowest, How Does Spread Differ?"), unsafe_allow_html=True)
@@ -654,11 +654,13 @@ with tabs[3]:
     else:
         st.info("Not enough monthly data.")
 
-    # ── Q10 ──────────────────────────────────────────────────────────────────
+# ── Q10 ──────────────────────────────────────────────────────────────────
     st.markdown(sec("Q10 · Age Bands vs Outcomes — Does Age Relate to Performance?"), unsafe_allow_html=True)
 
     if len(age_stats) > 0:
-        age_long = age_stats.melt(
+        age_stats_plot = age_stats[age_stats["count"] >= 5].copy()
+
+        age_long = age_stats_plot.melt(
             id_vars="age_band",
             value_vars=["avg_grade", "avg_attendance", "avg_logins"],
             var_name="metric", value_name="value")
@@ -672,26 +674,23 @@ with tabs[3]:
                      title="Q10 — Outcomes by Age Band",
                      labels={"age_band": "Age Band", "value": "Score / Rate", "metric": "Metric"},
                      color_discrete_sequence=[BLUE, RED, GREEN])
-        for _, row in age_stats.iterrows():
+        for _, row in age_stats_plot.iterrows():
             fig.add_annotation(x=row["age_band"], y=2,
                                text=f"n={int(row['count'])}", showarrow=False,
-                               font=dict(size=10, color="gray"))
+                               font=dict(size=10, color="black "))
         fig.update_layout(xaxis_title="Age Band")
         st.plotly_chart(qlayout(fig, 450), use_container_width=True)
 
         st.markdown(
             insight_box("💡", "INSIGHTS",
-                        "Mature learners (31+) often show higher attendance (more professional discipline) "
-                        "but may have more variable grades if technical content requires background they lack. "
-                        "The 21–25 band typically dominates platform engagement (more digital-native behaviour). "
-                        "If outcomes are roughly flat across age bands, Kayfa's design works well for adult learners "
-                        "of all ages. If a specific band underperforms, investigate whether course pacing or support "
-                        "resources meet that group's needs."),
+                        "Outcomes are broadly similar across the 15–20, 21–25, and 26–30 age bands "
+                        "(all roughly 75–80% on grade and attendance) — age does not appear to be a "
+                        "major factor in performance on this platform. The 31–35 band was excluded "
+                        "due to insufficient sample size (n=1)."),
             unsafe_allow_html=True,
         )
     else:
         st.info("No age band data available.")
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 5 · Q11 Q12 Q13
@@ -743,14 +742,17 @@ with tabs[4]:
             })
         st.dataframe(pd.DataFrame(summary_rows), use_container_width=True, hide_index=True)
 
+        segment_text_map = {
+            "High Achievers"        : "<b>High Achievers</b> — reinforce and challenge further; they're on track.",
+            "Moderate Performers"   : "<b>Moderate Performers</b> — low-hanging fruit; a small push in engagement or attendance could move many into the top tier.",
+            "Present but Struggling": "<b>Present but Struggling</b> — coming to class but not learning; need academic support (tutoring, concept review, peer study groups).",
+            "Disengaged At-Risk"    : "<b>Disengaged At-Risk</b> — most urgent; low on all dimensions, direct outreach needed.",
+        }
+        present_segments = clusters_df["cluster_label"].unique() if "cluster_label" in clusters_df.columns else clusters_df["label"].unique()
+        insight_text = " ".join(segment_text_map[s] for s in segment_text_map if s in present_segments)
+
         st.markdown(
-            insight_box("💡", "INSIGHTS",
-                        "<b>High Achievers</b> — reinforce and challenge further; they are on track. "
-                        "<b>Moderate Performers</b> — low-hanging fruit; a small push in engagement or attendance "
-                        "could move many into the top tier. "
-                        "<b>Present but Struggling</b> — coming to class but not learning; need academic support "
-                        "(tutoring, concept review sessions, peer study groups). "
-                        "<b>Disengaged At-Risk</b> — most urgent; low on all dimensions; direct outreach needed."),
+            insight_box("💡", "INSIGHTS", insight_text),
             unsafe_allow_html=True,
         )
     else:
@@ -784,36 +786,61 @@ with tabs[4]:
         st.plotly_chart(qlayout(fig, 450), use_container_width=True)
 
         flagged = q12[q12["flag"]]["group_name"].tolist()
+        worst = q12_sorted.iloc[-1]  # smallest true_count
         st.markdown(
             insight_box("💡", "INSIGHTS",
-                        f"Groups flagged (discrepancy > ±3 students): <b>{', '.join(flagged) if flagged else 'none'}</b>. "
-                        "Groups with a large negative discrepancy (true < stated) were over-reported at registration — "
-                        "students enrolled but didn't persist, inflating visible metrics. "
-                        "Groups with a large positive discrepancy may have absorbed students from dissolved groups "
-                        "and are now oversized, affecting instructor-to-student ratios."),
+                        f"All 10 groups show a negative discrepancy (true count < self-reported count) — "
+                        f"every group was over-reported at registration. The most extreme case is "
+                        f"<b>{worst['group_name']}</b>, with <b>0 students actually enrolled</b> despite a "
+                        f"stated count of {int(worst['stated_num_students'])}. "
+                        f"Flagged groups (discrepancy > ±3): <b>{', '.join(flagged)}</b>. "
+                        "This systematic over-reporting suggests registration numbers reflect initial sign-ups "
+                        "rather than active students, and should not be used for staffing or capacity decisions."),
             unsafe_allow_html=True,
         )
+        
     else:
         st.info("No group-size data available.")
 
-    # ── Q13 ──────────────────────────────────────────────────────────────────
+    # ── Q13 ─────────────────────────────────────────────────────────────────
     st.markdown(sec("Q13 · Non-Viable Group — Identify, Find Closest Match, Recommend Merge"), unsafe_allow_html=True)
+
+    # ── Real finding: a group with 0 actual students ────────────────────────
+    if len(q12_df) > 0:
+        q12_check = q12_df.copy()
+        q12_check["true_count"] = q12_check["true_count"].fillna(0).astype(int)
+        zero_groups = q12_check[q12_check["true_count"] == 0]
+        if len(zero_groups) > 0:
+            zg = zero_groups.iloc[0]
+            st.markdown(
+                insight_box("⚠️", "EMPTY GROUP FOUND",
+                            f"<b>{zg['group_name']}</b> is stated to have "
+                            f"<b>{int(zg['stated_num_students'])}</b> students but has "
+                            f"<b>0 actually enrolled</b>. This is the true non-viable group — "
+                            "there are no students to merge, so this is a data-cleanup item, "
+                            "not a merge candidate. <b>Recommended action:</b> remove this group "
+                            "record from groups.csv (or reassign its instructor/timeslot if still active)."),
+                unsafe_allow_html=True,
+            )
 
     if len(q13_df) > 0:
         q13 = q13_df.iloc[0]
 
+        st.markdown(
+            f"For groups that **do** have students, the smallest is "
+            f"**{q13.get('smallest_group_name','—')}** "
+            f"({int(q13.get('true_count', 0))} students) — well above the viability threshold, "
+            f"but shown below for completeness with its closest-profile peer."
+        )
+
         col_info_a, col_info_b = st.columns(2)
         with col_info_a:
-            st.metric("Smallest Group", q13.get("smallest_group_name", "—"))
+            st.metric("Smallest Active Group", q13.get("smallest_group_name", "—"))
             st.metric("True Count", int(q13.get("true_count", 0)))
         with col_info_b:
-            st.metric("Best Match for Merge", q13.get("best_match_name", "—"))
+            st.metric("Closest-Profile Match", q13.get("best_match_name", "—"))
             sim_val = float(q13.get("similarity_score") or 0)
             st.metric("Concept-Profile Similarity", f"{sim_val:.3f}")
-        
-
-
-
 
         # Q13 Profile Comparison Chart
         if len(q13_profile) > 0:
@@ -841,10 +868,6 @@ with tabs[4]:
             )
 
             st.plotly_chart(fig, use_container_width=True)
-                
-
-
-
 
         # Optional: closest student pair, if present in the document
         if "closest_student_a" in q13 and "closest_student_b" in q13:
@@ -853,25 +876,11 @@ with tabs[4]:
                             f"<b>{q13['closest_student_a']}</b> (in {q13.get('smallest_group_name','')}) "
                             f"↔ <b>{q13['closest_student_b']}</b> (in {q13.get('best_match_name','')}) — "
                             f"these two students have the most similar concept-mastery profile, "
-                            "supporting a smooth merge between the two groups."),
+                            f"showing how closely the two groups' curricula align (similarity = {float(q13.get('similarity_score') or 0):.3f})."),
                 unsafe_allow_html=True,
             )
-
-        st.markdown(
-            insight_box("✅", "RECOMMENDATION",
-                        f"<b>{q13.get('smallest_group_name','This group')}</b> has only "
-                        f"<b>{int(q13.get('true_count', 0))}</b> students — "
-                        "not operationally viable for meaningful group discussions or peer learning. "
-                        f"Merging into <b>{q13.get('best_match_name','the best-match group')}</b> "
-                        f"(concept-profile similarity = {float(q13.get('similarity_score') or 0):.3f}) minimises academic "
-                        "disruption: students will encounter familiar concepts at similar mastery levels. "
-                        "<b>Recommended action:</b> Close the small group at end of current month, "
-                        "move its students into the best-match group, and notify both instructors for onboarding support."),
-            unsafe_allow_html=True,
-        )
     else:
         st.info("No non-viable-group data available.")
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 6 · Q14 Q15
