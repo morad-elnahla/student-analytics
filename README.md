@@ -1,8 +1,7 @@
-&nbsp;
 
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Syne&weight=800&size=36&pause=1000&color=6366f1&center=true&vCenter=true&width=600&lines=Kayfa+Student+Analytics+🎓;Data+Wrangling+%26+Storytelling;MongoDB+Atlas+Integrated)](https://git.io/typing-svg)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Syne&weight=800&size=36&pause=1000&color=6366f1&center=true&vCenter=true&width=850&lines=Kayfa+Student+Analytics+🎓;Data+Wrangling+%26+Storytelling;MongoDB+Atlas+Integrated)](https://git.io/typing-svg)
 
 [![Python](https://img.shields.io/badge/Python-3.10-6366f1?style=for-the-badge&logo=python&logoColor=white&labelColor=0a0c10)](https://python.org)
 [![Pandas](https://img.shields.io/badge/Pandas-2.0-6366f1?style=for-the-badge&logo=pandas&logoColor=white&labelColor=0a0c10)](https://pandas.pydata.org)
@@ -137,4 +136,3 @@ Built with ⚡ for Kayfa AI & Data Analytics Internship · Week 2<br>
 Synthetic dataset — patterns are realistic but not real-world data.
 </div>
 
-&nbsp;
