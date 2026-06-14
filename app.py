@@ -150,6 +150,29 @@ html,body,[class*="css"],.stApp {
     border:1px solid rgba(99,102,241,0.2);
 }
 .stAlert { border-radius:10px !important; }
+/* ── Strategy Cards ── */
+.strat-card {
+    background:rgba(99,102,241,0.04);
+    border:1px solid rgba(99,102,241,0.15);
+    border-radius:16px;
+    padding:1.6rem 1.8rem;
+    height:100%;
+}
+.strat-title {
+    font-size:1rem;
+    font-weight:800;
+    color:#6366f1;
+    margin-bottom:1rem;
+    padding-bottom:0.6rem;
+    border-bottom:1px solid rgba(99,102,241,0.2);
+}
+.strat-point {
+    font-size:0.88rem;
+    line-height:1.75;
+    margin-bottom:0.7rem;
+    padding-left:0.8rem;
+    border-left:2px solid rgba(99,102,241,0.3);
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -993,27 +1016,17 @@ with tabs[5]:
     # ── TAB 7: Strategic Recommendations ────────────────────────────────────────
 with tabs[6]:
     st.markdown(sec("Executive Summary & Strategic Action Plan"), unsafe_allow_html=True)
-    
-    
-    # Q1 insight — groups below avg
+
     below_groups = att_group[att_group["status_label"] == "Well Below Average (>10 pp)"]["group_name"].tolist()
-    
-    # Q6 insight — worst concept
     worst_concept = concept_fail_sorted.iloc[0] if len(concept_fail_sorted) > 0 else None
-    
-    # Q8 insight — late vs ontime gap
     late_avg_val   = sub_grade[sub_grade["is_late"] == True]["pct"].mean()  if len(sub_grade) > 0 else 0
     ontime_avg_val = sub_grade[sub_grade["is_late"] == False]["pct"].mean() if len(sub_grade) > 0 else 0
     gap_val = (ontime_avg_val - late_avg_val) if not np.isnan(late_avg_val) else 0
-
-    # Q14 insight — top at-risk student
     top_student = top10_sorted.iloc[0]["full_name"] if len(top10) > 0 else "N/A"
-
-    # Q15 insight — sliding groups
     down_groups = trend_df[trend_df["trend"] == "Sliding Down ↓"]["group_name"].tolist() if len(trend_df) > 0 else []
 
     st.markdown("""
-    <div style="margin-bottom:2rem; font-size:1.05rem; color:#1e293b; line-height:1.6;">
+    <div style="margin-bottom:2rem;font-size:1.05rem;color:#1e293b;line-height:1.6;">
     Based on the multi-source data audit and predictive analytics, we have identified key operational 
     risks and growth opportunities for the Kayfa platform.
     </div>
@@ -1021,19 +1034,82 @@ with tabs[6]:
 
     col_a, col_b = st.columns(2)
     with col_a:
-        st.markdown(f"""<div class="strat-card"><div class="strat-title">🎯 Academic Intervention</div>
-            <div class="strat-point"><b>High-Priority Outreach:</b> Contact <b>{top_student}</b> and the Top 10 At-Risk students immediately.</div>
-            <div class="strat-point"><b>Attendance Alert:</b> Groups <b>{', '.join(below_groups) if below_groups else 'none'}</b> are 10+ pp below average — schedule check-in sessions.</div>
-            <div class="strat-point"><b>Curriculum Fix:</b> Redesign <b>{worst_concept['concept_name'] if worst_concept is not None else 'N/A'}</b> in <b>{worst_concept['course_name'] if worst_concept is not None else 'N/A'}</b> — failure rate is critical.</div>
+        st.markdown(f"""
+        <div class="strat-card">
+          <div class="strat-title">🎯 Academic Intervention</div>
+          <div class="strat-point"><b>High-Priority Outreach:</b> Contact <b>{top_student}</b> and the Top 10 At-Risk students immediately — composite risk score flags them across all 4 dimensions.</div>
+          <div class="strat-point"><b>Attendance Alert:</b> Groups <b>{', '.join(below_groups) if below_groups else 'none'}</b> are 10+ pp below platform average — schedule urgent check-in sessions with instructors.</div>
+          <div class="strat-point"><b>Curriculum Fix:</b> Redesign <b>{worst_concept['concept_name'] if worst_concept is not None else 'N/A'}</b> in <b>{worst_concept['course_name'] if worst_concept is not None else 'N/A'}</b> — failure rate exceeds 50%, this is a design issue not a student issue.</div>
+          <div class="strat-point"><b>Exam Support:</b> Exams are the most volatile assessment type — introduce pre-exam revision sessions and practice papers for all groups.</div>
         </div>""", unsafe_allow_html=True)
 
     with col_b:
-        st.markdown(f"""<div class="strat-card"><div class="strat-title">⚡ Engagement & Retention</div>
-            <div class="strat-point"><b>Login Gamification:</b> Daily rewards to encourage platform consistency — login frequency is the #1 grade predictor.</div>
-            <div class="strat-point"><b>Procrastination Alert:</b> Late submissions score <b>{gap_val:.1f} pp</b> lower — introduce "Early-Bird" bonus points.</div>
-            <div class="strat-point"><b>Group Support:</b> <b>{', '.join(down_groups) if down_groups else 'none'}</b> sliding down — assign peer tutors or extra sessions.</div>
+        st.markdown(f"""
+        <div class="strat-card">
+          <div class="strat-title">⚡ Engagement & Retention</div>
+          <div class="strat-point"><b>Login Gamification:</b> Daily login streaks and rewards — login frequency is the strongest engagement predictor of grade performance on the platform.</div>
+          <div class="strat-point"><b>Early Submission Incentive:</b> Late submissions score <b>{gap_val:.1f} pp</b> lower on average — introduce an Early-Bird bonus to shift submission behaviour.</div>
+          <div class="strat-point"><b>Sliding Groups:</b> <b>{', '.join(down_groups) if down_groups else 'none'}</b> show a declining grade trend — assign peer tutors or schedule extra support sessions before the gap widens further.</div>
+          <div class="strat-point"><b>Data Hygiene:</b> Registration headcounts are systematically over-reported across all 10 groups — audit and correct group records before using them for staffing or capacity planning.</div>
         </div>""", unsafe_allow_html=True)
 
-
-st.markdown("<br>", unsafe_allow_html=True)
-st.caption("All analytics precomputed and served from MongoDB Atlas · Kayfa AI & Data Analytics Internship · Week 2")
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Priority matrix
+    st.markdown(sec("Priority Action Matrix"), unsafe_allow_html=True)
+    st.markdown("""
+    <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+      <thead>
+        <tr style="background:rgba(99,102,241,0.1);">
+          <th style="padding:10px 14px;text-align:left;border-bottom:2px solid rgba(99,102,241,0.3);">Action</th>
+          <th style="padding:10px 14px;text-align:center;border-bottom:2px solid rgba(99,102,241,0.3);">Priority</th>
+          <th style="padding:10px 14px;text-align:center;border-bottom:2px solid rgba(99,102,241,0.3);">Timeline</th>
+          <th style="padding:10px 14px;text-align:left;border-bottom:2px solid rgba(99,102,241,0.3);">Owner</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid rgba(0,0,0,0.06);">
+          <td style="padding:9px 14px;">Contact Top 10 At-Risk Students</td>
+          <td style="padding:9px 14px;text-align:center;"><span style="background:#e74c3c;color:white;padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">URGENT</span></td>
+          <td style="padding:9px 14px;text-align:center;">This Week</td>
+          <td style="padding:9px 14px;">Academic Lead</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(0,0,0,0.06);background:rgba(0,0,0,0.01);">
+          <td style="padding:9px 14px;">Attendance intervention for flagged groups</td>
+          <td style="padding:9px 14px;text-align:center;"><span style="background:#e74c3c;color:white;padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">URGENT</span></td>
+          <td style="padding:9px 14px;text-align:center;">This Week</td>
+          <td style="padding:9px 14px;">Group Instructors</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(0,0,0,0.06);">
+          <td style="padding:9px 14px;">Redesign highest-failure concept</td>
+          <td style="padding:9px 14px;text-align:center;"><span style="background:#f97316;color:white;padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">HIGH</span></td>
+          <td style="padding:9px 14px;text-align:center;">Month 1</td>
+          <td style="padding:9px 14px;">Curriculum Team</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(0,0,0,0.06);background:rgba(0,0,0,0.01);">
+          <td style="padding:9px 14px;">Support sliding groups with extra sessions</td>
+          <td style="padding:9px 14px;text-align:center;"><span style="background:#f97316;color:white;padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">HIGH</span></td>
+          <td style="padding:9px 14px;text-align:center;">Month 1</td>
+          <td style="padding:9px 14px;">Group Instructors</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(0,0,0,0.06);">
+          <td style="padding:9px 14px;">Introduce Early-Bird submission incentive</td>
+          <td style="padding:9px 14px;text-align:center;"><span style="background:#3498db;color:white;padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">MEDIUM</span></td>
+          <td style="padding:9px 14px;text-align:center;">Month 2</td>
+          <td style="padding:9px 14px;">Product Team</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(0,0,0,0.06);background:rgba(0,0,0,0.01);">
+          <td style="padding:9px 14px;">Audit & correct group registration headcounts</td>
+          <td style="padding:9px 14px;text-align:center;"><span style="background:#3498db;color:white;padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">MEDIUM</span></td>
+          <td style="padding:9px 14px;text-align:center;">Month 2</td>
+          <td style="padding:9px 14px;">Operations</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px;">Login gamification & streak rewards</td>
+          <td style="padding:9px 14px;text-align:center;"><span style="background:#2ecc71;color:white;padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">LOW</span></td>
+          <td style="padding:9px 14px;text-align:center;">Quarter 2</td>
+          <td style="padding:9px 14px;">Product Team</td>
+        </tr>
+      </tbody>
+    </table>
+    """, unsafe_allow_html=True)
