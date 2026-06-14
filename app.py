@@ -470,11 +470,11 @@ with tabs[1]:
         st.markdown(
             insight_box("💡", "INSIGHTS",
                         f"Login r = <b>{r_login:.3f}</b> · Video r = <b>{r_video:.3f}</b>. "
-                        f"<b>{stronger}</b> is the stronger predictor of academic performance. "
-                        "If login frequency dominates, simply showing up on the platform predicts grades better "
-                        "than passive content consumption. A weak correlation on both would suggest quality of "
-                        "engagement (quiz attempts, forum participation) matters more than quantity."),
+                        f"<b>{stronger}</b> is the stronger predictor — students who watch more content tend to score higher. "
+                        "However, both correlations are weak, suggesting that quality of engagement "
+                        "(quiz attempts, forum participation) matters more than quantity of either logins or video consumption."),
             unsafe_allow_html=True,
+        
         )
     else:
         st.info("Not enough data for Q5.")
