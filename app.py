@@ -1034,7 +1034,6 @@ with tabs[6]:
             <div class="strat-point"><b>Group Support:</b> <b>{', '.join(down_groups) if down_groups else 'none'}</b> sliding down — assign peer tutors or extra sessions.</div>
         </div>""", unsafe_allow_html=True)
 
-    st.info("💡 **Managerial Insight:** Data shows that 'Login Frequency' is a stronger predictor of success than 'Video Watch Time'.")
 
 st.markdown("<br>", unsafe_allow_html=True)
 st.caption("All analytics precomputed and served from MongoDB Atlas · Kayfa AI & Data Analytics Internship · Week 2")
