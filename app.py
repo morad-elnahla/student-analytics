@@ -993,20 +993,47 @@ with tabs[5]:
     # ── TAB 7: Strategic Recommendations ────────────────────────────────────────
 with tabs[6]:
     st.markdown(sec("Executive Summary & Strategic Action Plan"), unsafe_allow_html=True)
+    
+    
+    # Q1 insight — groups below avg
+    below_groups = att_group[att_group["status_label"] == "Well Below Average (>10 pp)"]["group_name"].tolist()
+    
+    # Q6 insight — worst concept
+    worst_concept = concept_fail_sorted.iloc[0] if len(concept_fail_sorted) > 0 else None
+    
+    # Q8 insight — late vs ontime gap
+    late_avg_val   = sub_grade[sub_grade["is_late"] == True]["pct"].mean()  if len(sub_grade) > 0 else 0
+    ontime_avg_val = sub_grade[sub_grade["is_late"] == False]["pct"].mean() if len(sub_grade) > 0 else 0
+    gap_val = (ontime_avg_val - late_avg_val) if not np.isnan(late_avg_val) else 0
+
+    # Q14 insight — top at-risk student
+    top_student = top10_sorted.iloc[0]["full_name"] if len(top10) > 0 else "N/A"
+
+    # Q15 insight — sliding groups
+    down_groups = trend_df[trend_df["trend"] == "Sliding Down ↓"]["group_name"].tolist() if len(trend_df) > 0 else []
+
     st.markdown("""
     <div style="margin-bottom:2rem; font-size:1.05rem; color:#1e293b; line-height:1.6;">
-    Based on the multi-source data audit and predictive analytics, we have identified key operational risks and growth opportunities for the Kayfa platform.
+    Based on the multi-source data audit and predictive analytics, we have identified key operational 
+    risks and growth opportunities for the Kayfa platform.
     </div>
     """, unsafe_allow_html=True)
+
     col_a, col_b = st.columns(2)
     with col_a:
-        st.markdown("""<div class="strat-card"><div class="strat-title">🎯 Academic Intervention</div>
-            <div class="strat-point"><b>High-Priority Outreach:</b> Immediate contact for the <b>Top 10 At-Risk</b> students.</div>
-            <div class="strat-point"><b>Attendance Threshold:</b> Automated checks for students below <b>65%</b> attendance.</div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="strat-card"><div class="strat-title">🎯 Academic Intervention</div>
+            <div class="strat-point"><b>High-Priority Outreach:</b> Contact <b>{top_student}</b> and the Top 10 At-Risk students immediately.</div>
+            <div class="strat-point"><b>Attendance Alert:</b> Groups <b>{', '.join(below_groups) if below_groups else 'none'}</b> are 10+ pp below average — schedule check-in sessions.</div>
+            <div class="strat-point"><b>Curriculum Fix:</b> Redesign <b>{worst_concept['concept_name'] if worst_concept is not None else 'N/A'}</b> in <b>{worst_concept['course_name'] if worst_concept is not None else 'N/A'}</b> — failure rate is critical.</div>
+        </div>""", unsafe_allow_html=True)
+
     with col_b:
-        st.markdown("""<div class="strat-card"><div class="strat-title">⚡ Engagement & Retention</div>
-            <div class="strat-point"><b>Login Gamification:</b> Daily rewards to encourage platform consistency.</div>
-            <div class="strat-point"><b>Procrastination Alert:</b> "Early-Bird" bonus points to shift submission behavior.</div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="strat-card"><div class="strat-title">⚡ Engagement & Retention</div>
+            <div class="strat-point"><b>Login Gamification:</b> Daily rewards to encourage platform consistency — login frequency is the #1 grade predictor.</div>
+            <div class="strat-point"><b>Procrastination Alert:</b> Late submissions score <b>{gap_val:.1f} pp</b> lower — introduce "Early-Bird" bonus points.</div>
+            <div class="strat-point"><b>Group Support:</b> <b>{', '.join(down_groups) if down_groups else 'none'}</b> sliding down — assign peer tutors or extra sessions.</div>
+        </div>""", unsafe_allow_html=True)
+
     st.info("💡 **Managerial Insight:** Data shows that 'Login Frequency' is a stronger predictor of success than 'Video Watch Time'.")
 
 st.markdown("<br>", unsafe_allow_html=True)
