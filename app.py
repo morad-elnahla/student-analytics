@@ -705,9 +705,13 @@ with tabs[3]:
                      labels={"age_band": "Age Band", "value": "Score / Rate", "metric": "Metric"},
                      color_discrete_sequence=[BLUE, RED, GREEN])
         for _, row in age_stats_plot.iterrows():
-            fig.add_annotation(x=row["age_band"], y=2,
-                               text=f"n={int(row['count'])}", showarrow=False,
-                               font=dict(size=10, color="black "))
+          fig.add_annotation(
+            x=row["age_band"],
+            y=5,  
+            text=f"n={int(row['count'])} students",
+            showarrow=False,
+            font=dict(size=11, color="black", weight=650)
+    )
         fig.update_layout(xaxis_title="Age Band")
         st.plotly_chart(qlayout(fig, 450), use_container_width=True)
 
@@ -759,19 +763,7 @@ with tabs[4]:
         fig.add_hline(y=60, line_dash="dot", line_color="gray", opacity=0.5)
         fig.add_vline(x=60, line_dash="dot", line_color="gray", opacity=0.5)
 
-        # FIX 6: Annotations on chart for each segment — makes it readable for managers
-        for _, row in profile.iterrows():
-            fig.add_annotation(
-                x=clusters_df[clusters_df["cluster_label"]==row["cluster_label"]]["attendance_rate"].mean(),
-                y=clusters_df[clusters_df["cluster_label"]==row["cluster_label"]]["avg_grade_pct"].mean(),
-                text=f"<b>{row['cluster_label']}</b><br>n={int(row['n'])}",
-                showarrow=False,
-                bgcolor="white",
-                bordercolor=CLUSTER_COLORS.get(row["cluster_label"], BLUE),
-                borderwidth=2,
-                borderpad=4,
-                font=dict(size=11)
-            )
+        
 
         fig.update_traces(marker_opacity=0.75)
         fig.update_layout(legend_title="Student Segment")
@@ -780,7 +772,7 @@ with tabs[4]:
         summary_rows = []
         for _, row in profile.iterrows():
             summary_rows.append({
-                "Segment": row["cluster_label"], "# Students": int(row["n"]),
+                "Segment": row["cluster_label"], "Students": f"{int(row['n'])} students",
                 "Avg Attendance (%)": f"{row['att_rate']:.1f}",
                 "Avg Logins": f"{row['logins']:.1f}",
                 "Avg Grade (%)": f"{row['avg_grade']:.1f}",
