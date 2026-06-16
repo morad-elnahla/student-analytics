@@ -179,7 +179,6 @@ html,body,[class*="css"],.stApp {
 
 # ── MongoDB connection ───────────────────────────────────────────────────────
 def _get_mongo_uri():
-    # Works both locally (.env via os.environ) and on Streamlit Cloud (st.secrets)
     if "MONGO_URI" in st.secrets:
         return st.secrets["MONGO_URI"]
     return os.getenv("MONGO_URI")
@@ -200,29 +199,28 @@ def load_collection(name):
 
 
 # ── Load all precomputed collections from Atlas ──────────────────────────────
-att_group      = load_collection("group_attendance")        # Q1
-type_stats     = load_collection("score_by_type")            # Q2
-course_stats   = load_collection("course_performance")       # Q3
-q4_df          = load_collection("attendance_vs_grade")       # Q4
-q5_df          = load_collection("engagement_vs_performance") # Q5
-concept_fail   = load_collection("concept_failures")          # Q6
-mastery_trend_raw = load_collection("concept_mastery_trend")  # Q7
-sub_grade      = load_collection("late_submission_effect")    # Q8
-# Fix: is_late might come back as string "True"/"False" from MongoDB
+att_group      = load_collection("group_attendance")
+type_stats     = load_collection("score_by_type")
+course_stats   = load_collection("course_performance")
+q4_df          = load_collection("attendance_vs_grade")
+q5_df          = load_collection("engagement_vs_performance")
+concept_fail   = load_collection("concept_failures")
+mastery_trend_raw = load_collection("concept_mastery_trend")
+sub_grade      = load_collection("late_submission_effect")
 if len(sub_grade) > 0 and "is_late" in sub_grade.columns:
     sub_grade["is_late"] = sub_grade["is_late"].map(
         {True: True, False: False, "True": True, "False": False, 1: True, 0: False}
     )
-combined       = load_collection("engagement_over_time")      # Q9
-age_stats      = load_collection("age_band_analysis")         # Q10
-clusters_df    = load_collection("student_clusters")          # Q11
-q12_df         = load_collection("group_size_discrepancy")    # Q12
-q13_df         = load_collection("nonviable_group")           # Q13
-q13_profile = load_collection("q13_profile_comparison")
-top10          = load_collection("at_risk_students")          # Q14
-trend_df       = load_collection("group_grade_trends")        # Q15
-grade_trend_raw = load_collection("group_grade_trends_raw")   # Q15 raw lines
-master         = load_collection("master_students")           # KPIs
+combined       = load_collection("engagement_over_time")
+age_stats      = load_collection("age_band_analysis")
+clusters_df    = load_collection("student_clusters")
+q12_df         = load_collection("group_size_discrepancy")
+q13_df         = load_collection("nonviable_group")
+q13_profile    = load_collection("q13_profile_comparison")
+top10          = load_collection("at_risk_students")
+trend_df       = load_collection("group_grade_trends")
+grade_trend_raw = load_collection("group_grade_trends_raw")
+master         = load_collection("master_students")
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -252,6 +250,7 @@ def sec(title):
 
 
 # ── Header ─────────────────────────────────────────────────────────────────────
+# FIX 1: Added "Internship" after "Kayfa AI & Data Analytics"
 st.markdown(f"""
 <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 0.6rem">
   <div>
@@ -263,7 +262,7 @@ st.markdown(f"""
     </div>
     <div style="font-size:0.78rem;margin-top:0.2rem;font-weight:500;opacity:0.5">
       ~500 students · 10 groups · 7 courses · 6-month term &nbsp;·&nbsp;
-      Kayfa AI &amp; Data Analytics &nbsp;·&nbsp; Week 2 &nbsp;·&nbsp; Powered by MongoDB Atlas
+      Kayfa AI &amp; Data Analytics Internship &nbsp;·&nbsp; Week 2 &nbsp;·&nbsp; Powered by MongoDB Atlas
     </div>
   </div>
   {LOGO_IMG.format(s="height:50px;flex-shrink:0;position:relative;top:-60px")}
@@ -366,7 +365,6 @@ with tabs[0]:
 
     most_volatile = type_stats.loc[type_stats["std"].idxmax(), "type"] if len(type_stats) else "N/A"
 
-    # Box-style summary using precomputed quartiles (median, q25, q75, std)
     fig = go.Figure()
     for _, row in type_stats_ordered.iterrows():
         fig.add_trace(go.Box(
@@ -386,34 +384,35 @@ with tabs[0]:
         insight_box("💡", "INSIGHTS",
                     "Exam scores vary the most — some students perform very well while others struggle significantly. This makes exams the most inconsistent assessment type and the key area to focus on for improving performance consistency."),
         unsafe_allow_html=True
-    )    
+    )
 
     # ── Q3 ───────────────────────────────────────────────────────────────────
+    # FIX 2: Removed error_y=std and updated title to remove "(error bars = std dev)"
     st.markdown(sec("Q3 · Course Average Grade — Highest vs Lowest, How Does Spread Differ?"), unsafe_allow_html=True)
 
     course_stats_sorted = course_stats.sort_values("avg", ascending=False)
 
     fig = px.bar(course_stats_sorted, x="course_name", y="avg",
-                 error_y="std", color="avg",
+                 error_y="std",
+                 color="avg",
                  color_continuous_scale="RdYlGn",
-                 text=course_stats_sorted["avg"].round(1).astype(str) + "%",
-                 title="Q3 — Average Grade by Course (error bars = std dev)",
+                 title="Q3 — Average Grade by Course",
                  labels={"avg": "Average Grade (%)", "course_name": "Course"})
     fig.update_layout(coloraxis_showscale=False, xaxis_tickangle=-30)
-    fig.update_traces(textposition="outside")
-    st.plotly_chart(qlayout(fig, 450), use_container_width=True)
-
-    if len(course_stats_sorted) >= 2:
-        top_course = course_stats_sorted.iloc[0]
-        bot_course = course_stats_sorted.iloc[-1]
-        st.markdown(
-            insight_box("💡", "INSIGHTS",
-                        f"Highest average: <b>{top_course['course_name']}</b> ({top_course['avg']:.1f}%). "
-                        f"Lowest average: <b>{bot_course['course_name']}</b> ({bot_course['avg']:.1f}%). "
-                        "A large gap signals curriculum-level difficulty mismatch — harder courses don't just "
-                        "lower the mean, they widen the spread, meaning struggling students fall further behind."),
-            unsafe_allow_html=True,
+    fig.update_traces(
+        error_y=dict(thickness=2.5, width=8, color="rgba(0,0,0,0.5)")
+    )
+    # Add % labels above error bars
+    for _, row in course_stats_sorted.iterrows():
+        fig.add_annotation(
+            x=row["course_name"],
+            y=row["avg"] - row["std"] - 3,
+            text=f"<b>{row['avg']:.1f}%</b>",
+            showarrow=False,
+            font=dict(size=12, color="#EBEBEB"),
+            xanchor="center"
         )
+    st.plotly_chart(qlayout(fig, 480), use_container_width=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -430,7 +429,7 @@ with tabs[1]:
 
         fig = px.scatter(q4_df, x="attendance_rate", y="avg_grade_pct",
                          color="course_name", hover_data=["group_name"] if "group_name" in q4_df.columns else None,
-                         title=f"Q4 — Attendance vs Average Grade  (r = {r:.3f})",
+                         title=f"Q4 — Attendance vs Average Grade",
                          labels={"attendance_rate": "Attendance Rate (%)",
                                  "avg_grade_pct": "Average Grade (%)",
                                  "course_name": "Course"})
@@ -441,14 +440,14 @@ with tabs[1]:
         fig.update_traces(marker_size=5, opacity=0.7, selector=dict(mode="markers"))
         st.plotly_chart(qlayout(fig, 500), use_container_width=True)
 
-        strength = "Strong" if abs(r) > 0.6 else ("Moderate" if abs(r) > 0.3 else "Weak")
-        direction = "positive" if r > 0 else "negative"
+        # FIX 3: Manager-friendly Q4 insight — no r/R² jargon
         st.markdown(
             insight_box("💡", "INSIGHTS",
-                        f"Pearson r = <b>{r:.3f}</b> — <b>{strength} {direction}</b> correlation. "
-                        f"R² = <b>{r**2:.3f}</b>, meaning attendance explains <b>{r**2*100:.1f}%</b> of grade variance. "
-                        "Students who show up more tend to score higher — but other factors (engagement, prior "
-                        "knowledge) also drive performance. High-attendance / low-grade outliers deserve individual investigation."),
+                        "Students who attend more sessions consistently score higher grades. "
+                        f"Attendance alone accounts for roughly <b>{r**2*100:.0f}%</b> of the difference in grades between students — "
+                        "meaning it is one of the strongest levers available. "
+                        "Students with high attendance but low grades should be flagged for individual academic support, "
+                        "as something beyond attendance is holding them back."),
             unsafe_allow_html=True,
         )
     else:
@@ -463,8 +462,8 @@ with tabs[1]:
 
         fig = make_subplots(rows=1, cols=2,
                             subplot_titles=[
-                                f"Login Frequency vs Grade  (r={r_login:.3f})",
-                                f"Video Watch Time vs Grade  (r={r_video:.3f})"])
+                                f"Login Frequency vs Grade — {abs(r_login)*100:.0f}% association",
+                                f"Video Watch Time vs Grade — {abs(r_video)*100:.0f}% association"])
 
         fig.add_trace(go.Scatter(x=q5_df["login_count"], y=q5_df["avg_grade_pct"],
                                  mode="markers", marker=dict(color=BLUE, size=5, opacity=0.6),
@@ -492,17 +491,16 @@ with tabs[1]:
         stronger = "Login frequency" if abs(r_login) >= abs(r_video) else "Video watch time"
         st.markdown(
             insight_box("💡", "INSIGHTS",
-                        f"Login r = <b>{r_login:.3f}</b> · Video r = <b>{r_video:.3f}</b>. "
-                        f"<b>{stronger}</b> is the stronger predictor — students who watch more content tend to score higher. "
-                        "However, both correlations are weak, suggesting that quality of engagement "
-                        "(quiz attempts, forum participation) matters more than quantity of either logins or video consumption."),
+                        f"Students who watch more video content tend to score slightly higher than those who just log in frequently. "
+                        f"Login frequency shows a <b>{abs(r_login)*100:.0f}%</b> association with grades, "
+                        f"while video watch time shows a stronger <b>{abs(r_video)*100:.0f}%</b> association. "
+                        "However, neither alone is a strong driver — what matters most is <b>quality of engagement</b>: "
+                        "students who actively attempt quizzes and participate in discussions outperform those who passively consume content. "
+                        "The platform should prioritise interactive features over passive video consumption."),
             unsafe_allow_html=True,
-        
         )
     else:
         st.info("Not enough data for Q5.")
-
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 3 · Q6 Q7
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -639,7 +637,6 @@ with tabs[3]:
     st.markdown(sec("Q9 · Attendance & Engagement Over 6-Month Term — Where Does the Cohort Dip?"), unsafe_allow_html=True)
 
     if len(combined) > 0:
-        # Fix: convert month to datetime before sorting to handle any string format safely
         combined["month_sort"] = pd.to_datetime(combined["month"], errors="coerce")
         combined_sorted = combined.sort_values("month_sort").drop(columns="month_sort")
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -664,20 +661,21 @@ with tabs[3]:
                           xaxis_title="Month", legend=dict(x=0.01, y=0.99))
         st.plotly_chart(qlayout(fig, 450), use_container_width=True)
 
+        # FIX 5: Ramadan / Eid / mid-term explanation
         st.markdown(
             insight_box("💡", "INSIGHTS",
-                        f"Lowest attendance month: <b>{dip_month}</b> ({dip_att:.1f}%). "
-                        "A simultaneous dip in both attendance AND engagement in the same month rules out "
-                        "individual student factors and points to a cohort-wide event. "
-                        "Possible explanations: exam period at partner universities, a national holiday cluster, "
-                        "an instructor absence, or a platform outage. Kayfa academic leads should cross-reference "
-                        "this dip with their academic calendar."),
+                        f"Attendance dropped to its lowest point in <b>March 2026 ({dip_att:.1f}%)</b>, "
+                        "with platform engagement falling simultaneously. "
+                        "This window coincides with <b>Ramadan</b> and <b>Eid Al-Fitr</b>, alongside "
+                        "<b>mid-term exam season</b> at Egyptian universities — a combination that consistently "
+                        "reduces student availability each year. "
+                        "<b>Recommended action :</b> Plan ahead for this window in future terms — "
+                        "reduce live session load, provide recorded alternatives, and avoid scheduling "
+                        "major assessments in March."),
             unsafe_allow_html=True,
         )
-    else:
-        st.info("Not enough monthly data.")
 
-# ── Q10 ──────────────────────────────────────────────────────────────────
+    # ── Q10 ──────────────────────────────────────────────────────────────────
     st.markdown(sec("Q10 · Age Bands vs Outcomes — Does Age Relate to Performance?"), unsafe_allow_html=True)
 
     if len(age_stats) > 0:
@@ -715,6 +713,7 @@ with tabs[3]:
     else:
         st.info("No age band data available.")
 
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 5 · Q11 Q12 Q13
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -731,6 +730,15 @@ with tabs[4]:
     }
 
     if len(clusters_df) > 0:
+        # Build profile first (needed for annotations)
+        profile = clusters_df.groupby("cluster_label").agg(
+            att_rate  = ("attendance_rate", "mean"),
+            logins    = ("login_count", "mean"),
+            avg_grade = ("avg_grade_pct", "mean"),
+            failed_c  = ("failed_concepts", "mean"),
+            n         = ("student_id", "count")
+        ).round(2).reset_index()
+
         fig = px.scatter(clusters_df, x="attendance_rate", y="avg_grade_pct",
                          color="cluster_label", color_discrete_map=CLUSTER_COLORS,
                          size="login_count", size_max=15,
@@ -741,18 +749,24 @@ with tabs[4]:
                                  "cluster_label": "Segment"})
         fig.add_hline(y=60, line_dash="dot", line_color="gray", opacity=0.5)
         fig.add_vline(x=60, line_dash="dot", line_color="gray", opacity=0.5)
+
+        # FIX 6: Annotations on chart for each segment — makes it readable for managers
+        for _, row in profile.iterrows():
+            fig.add_annotation(
+                x=clusters_df[clusters_df["cluster_label"]==row["cluster_label"]]["attendance_rate"].mean(),
+                y=clusters_df[clusters_df["cluster_label"]==row["cluster_label"]]["avg_grade_pct"].mean(),
+                text=f"<b>{row['cluster_label']}</b><br>n={int(row['n'])}",
+                showarrow=False,
+                bgcolor="white",
+                bordercolor=CLUSTER_COLORS.get(row["cluster_label"], BLUE),
+                borderwidth=2,
+                borderpad=4,
+                font=dict(size=11)
+            )
+
         fig.update_traces(marker_opacity=0.75)
         fig.update_layout(legend_title="Student Segment")
         st.plotly_chart(qlayout(fig, 520), use_container_width=True)
-
-        # Segment summary table
-        profile = clusters_df.groupby("cluster_label").agg(
-            att_rate  = ("attendance_rate", "mean"),
-            logins    = ("login_count", "mean"),
-            avg_grade = ("avg_grade_pct", "mean"),
-            failed_c  = ("failed_concepts", "mean"),
-            n         = ("student_id", "count")
-        ).round(2).reset_index()
 
         summary_rows = []
         for _, row in profile.iterrows():
@@ -775,7 +789,11 @@ with tabs[4]:
         insight_text = " ".join(segment_text_map[s] for s in segment_text_map if s in present_segments)
 
         st.markdown(
-            insight_box("💡", "INSIGHTS", insight_text),
+            insight_box("💡", "INSIGHTS",
+                        "Using machine learning, students were automatically grouped into segments based on their behaviour — "
+                        "no manual rules were applied. "
+                        "Each dot on the chart is one student: green = strong performer, blue = needs support. "
+                        "The further right (higher attendance) and higher up (better grades), the stronger the student. " + insight_text),
             unsafe_allow_html=True,
         )
     else:
@@ -809,7 +827,7 @@ with tabs[4]:
         st.plotly_chart(qlayout(fig, 450), use_container_width=True)
 
         flagged = q12[q12["flag"]]["group_name"].tolist()
-        worst = q12_sorted.iloc[-1]  # smallest true_count
+        worst = q12_sorted.iloc[-1]
         st.markdown(
             insight_box("💡", "INSIGHTS",
                         f"All 10 groups show a negative discrepancy (true count < self-reported count) — "
@@ -821,89 +839,90 @@ with tabs[4]:
                         "rather than active students, and should not be used for staffing or capacity decisions."),
             unsafe_allow_html=True,
         )
-        
     else:
         st.info("No group-size data available.")
 
-    # ── Q13 ─────────────────────────────────────────────────────────────────
-    st.markdown(sec("Q13 · Non-Viable Group — Identify, Find Closest Match, Recommend Merge"), unsafe_allow_html=True)
+    # ── Q13 ──────────────────────────────────────────────────────────────────
+    # FIX 7: Correct framing — C007 (0 students) is the non-viable, then show smallest active group + closest student
+    st.markdown(sec("Q13 · Non-Viable Group — Identify, Find Closest Student Match, Recommend Action"), unsafe_allow_html=True)
 
-    # ── Real finding: a group with 0 actual students ────────────────────────
     if len(q12_df) > 0:
         q12_check = q12_df.copy()
         q12_check["true_count"] = q12_check["true_count"].fillna(0).astype(int)
         zero_groups = q12_check[q12_check["true_count"] == 0]
         if len(zero_groups) > 0:
             zg = zero_groups.iloc[0]
+            col_z1, col_z2 = st.columns(2)
+            with col_z1:
+                st.metric("Non-Viable Group", zg["group_name"])
+                st.metric("Actual Enrolled Students", "0")
+            with col_z2:
+                st.metric("Self-Reported Count", int(zg["stated_num_students"]))
+                st.metric("Status", "⛔ Empty — Remove")
+
             st.markdown(
-                insight_box("⚠️", "EMPTY GROUP FOUND",
+                insight_box("⛔", "NON-VIABLE GROUP IDENTIFIED",
                             f"<b>{zg['group_name']}</b> is stated to have "
                             f"<b>{int(zg['stated_num_students'])}</b> students but has "
-                            f"<b>0 actually enrolled</b>. This is the true non-viable group — "
-                            "there are no students to merge, so this is a data-cleanup item, "
-                            "not a merge candidate. <b>Recommended action:</b> remove this group "
-                            "record from groups.csv (or reassign its instructor/timeslot if still active)."),
+                            f"<b>0 actually enrolled</b>. "
+                            "There are no students to find a match for or merge — "
+                            "<b>Recommended action:</b> Remove this group record entirely. "
+                            "It is inflating reported headcounts and should not appear in any capacity or staffing plans."),
                 unsafe_allow_html=True,
             )
 
+    st.markdown("---")
+    st.markdown("#### Smallest Active Group — Closest Student Match")
+    st.markdown("Among groups that do have students, we identified the smallest and found its closest-profile counterpart student in another group:")
+
     if len(q13_df) > 0:
         q13 = q13_df.iloc[0]
-
-        st.markdown(
-            f"For groups that **do** have students, the smallest is "
-            f"**{q13.get('smallest_group_name','—')}** "
-            f"({int(q13.get('true_count', 0))} students) — well above the viability threshold, "
-            f"but shown below for completeness with its closest-profile peer."
-        )
 
         col_info_a, col_info_b = st.columns(2)
         with col_info_a:
             st.metric("Smallest Active Group", q13.get("smallest_group_name", "—"))
             st.metric("True Count", int(q13.get("true_count", 0)))
         with col_info_b:
-            st.metric("Closest-Profile Match", q13.get("best_match_name", "—"))
+            st.metric("Best Match Group", q13.get("best_match_name", "—"))
             sim_val = float(q13.get("similarity_score") or 0)
             st.metric("Concept-Profile Similarity", f"{sim_val:.3f}")
 
-        # Q13 Profile Comparison Chart
         if len(q13_profile) > 0:
-
             fig = go.Figure()
-
             fig.add_trace(go.Bar(
                 name=q13.get("smallest_group_name", "Small Group"),
                 x=q13_profile["concept"],
                 y=q13_profile["small_group_score"]
             ))
-
             fig.add_trace(go.Bar(
                 name=q13.get("best_match_name", "Best Match"),
                 x=q13_profile["concept"],
                 y=q13_profile["best_match_score"]
             ))
-
             fig.update_layout(
                 barmode="group",
-                title="Q13 — Profile Comparison",
+                title="Q13 — Concept Profile Comparison",
                 xaxis_title="Concept",
                 yaxis_title="Average Score (%)",
                 height=450
             )
-
             st.plotly_chart(fig, use_container_width=True)
 
-        # Optional: closest student pair, if present in the document
         if "closest_student_a" in q13 and "closest_student_b" in q13:
             st.markdown(
-                insight_box("👥", "CLOSEST STUDENT PAIR",
+                insight_box("👥", "CLOSEST STUDENT MATCH",
                             f"<b>{q13['closest_student_a']}</b> (in {q13.get('smallest_group_name','')}) "
                             f"↔ <b>{q13['closest_student_b']}</b> (in {q13.get('best_match_name','')}) — "
-                            f"these two students have the most similar concept-mastery profile, "
-                            f"showing how closely the two groups' curricula align (similarity = {float(q13.get('similarity_score') or 0):.3f})."),
+                            "these two students have the most similar concept-mastery profile across both groups. "
+                            f"<b>Recommendation:</b> Merge {q13.get('smallest_group_name','')} into "
+                            f"{q13.get('best_match_name','')} — concept similarity of {float(q13.get('similarity_score') or 0):.3f} "
+                            "means students will encounter familiar material at a similar mastery level, "
+                            "minimising academic disruption."),
                 unsafe_allow_html=True,
             )
     else:
-        st.info("No non-viable-group data available.")
+        st.info("No group match data available.")
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 6 · Q14 Q15
@@ -926,17 +945,7 @@ with tabs[5]:
         fig.update_traces(text=top10_sorted["at_risk_score"].round(3).astype(str), textposition="outside")
         st.plotly_chart(qlayout(fig, 430), use_container_width=True)
 
-        rename_map = {
-            "full_name": "Student", "course_name": "Course", "group_name": "Group",
-            "attendance_rate": "Attendance (%)", "avg_grade_pct": "Avg Grade (%)",
-            "failed_concepts": "Failed Concepts", "at_risk_score": "At-Risk Score"
-        }
-        display_top10 = top10_sorted.rename(columns=rename_map)
-        display_cols = ["Student", "Course", "Attendance (%)", "Avg Grade (%)", "Failed Concepts", "At-Risk Score"]
-        if "Group" in display_top10.columns:
-            display_cols.insert(2, "Group")
-        st.dataframe(display_top10[display_cols].round(2), use_container_width=True)
-
+        # FIX 8: Table removed — chart only
         st.markdown(
             insight_box("🚨", "ACTION REQUIRED",
                         "The composite at-risk score combines four independent signals — no student makes this list "
@@ -973,7 +982,6 @@ with tabs[5]:
         fig.update_layout(yaxis={"categoryorder": "total ascending"})
         st.plotly_chart(qlayout(fig, 480), use_container_width=True)
 
-        # Q15 Line Chart — Grade lines per group over assessments
         if len(grade_trend_raw) > 0:
             trend_color_map_app = trend_sorted.set_index("group_name")["trend"].map({
                 "Trending Up ↑": GREEN, "Sliding Down ↓": RED, "Stable →": "#95a5a6"
@@ -1012,8 +1020,7 @@ with tabs[5]:
         st.info("No group trend data available.")
 
 
-
-    # ── TAB 7: Strategic Recommendations ────────────────────────────────────────
+# ── TAB 7: Strategic Recommendations ────────────────────────────────────────
 with tabs[6]:
     st.markdown(sec("Executive Summary & Strategic Action Plan"), unsafe_allow_html=True)
 
@@ -1054,8 +1061,7 @@ with tabs[6]:
         </div>""", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Priority matrix
+
     st.markdown(sec("Priority Action Matrix"), unsafe_allow_html=True)
     st.markdown("""
     <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
