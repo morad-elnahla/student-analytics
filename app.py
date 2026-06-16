@@ -413,8 +413,17 @@ with tabs[0]:
             xanchor="center"
         )
     st.plotly_chart(qlayout(fig, 480), use_container_width=True)
-
-
+    if len(course_stats_sorted) >= 2:
+        top_course = course_stats_sorted.iloc[0]
+        bot_course = course_stats_sorted.iloc[-1]
+        st.markdown(
+            insight_box("💡", "INSIGHTS",
+                        f"Highest average: <b>{top_course['course_name']}</b> ({top_course['avg']:.1f}%). "
+                        f"Lowest average: <b>{bot_course['course_name']}</b> ({bot_course['avg']:.1f}%). "
+                        "A large gap signals curriculum-level difficulty mismatch — harder courses don't just "
+                        "lower the mean, they widen the spread, meaning struggling students fall further behind."),
+            unsafe_allow_html=True,
+        )
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 2 · Q4 Q5
 # ═══════════════════════════════════════════════════════════════════════════════
